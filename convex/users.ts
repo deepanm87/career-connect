@@ -46,7 +46,7 @@ export const upsertCurrentUser = mutation({
       (typeof identity.givenName === "string" ? identity.givenName : null) ??
       identity.nickname ?? "New Member"
     const email = identity.email ?? `${identity.subject}@users.noreply`
-    const imageUrl = typeof identity.pictureUrl === "string" ? identify.pictureUrl : undefined
+    const imageUrl = typeof identity.pictureUrl === "string" ? identity.pictureUrl : undefined
 
     if (existing !== null) {
       const patch: {

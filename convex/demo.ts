@@ -171,7 +171,7 @@ export const becomeAlex = mutation({
       const already = await ctx.db
         .query("savedJobs")
         .withIndex("by_user_and_job", q => 
-          q.eq("userId", me._id).eq("jobId", targetJob!._id)
+          q.eq("userId", me._id).eq("jobId", targetJob._id)
         )
         .unique()
       if (already === null) {
@@ -194,7 +194,7 @@ export const becomeAlex = mutation({
       const existingApplication = await ctx.db
         .query("applications")
         .withIndex("by_user_and_job", q => 
-          q.eq("userId", me._id).eq("jobId", appliedJob!._id)
+          q.eq("userId", me._id).eq("jobId", appliedJob._id)
         )
         .unique()
       if (existingApplication === null) {
@@ -214,7 +214,7 @@ export const becomeAlex = mutation({
       .query("outreachDrafts")
       .withIndex("by_userId", q => q.eq("userId", me._id))
       .collect()
-    const hasWeakDraft = existingDraft.some(
+    const hasWeakDraft = existingDrafts.some(
       d => d.connectionMessage === ALEX.weakOutreach.connectionMessage
     )
     if (!hasWeakDraft) {

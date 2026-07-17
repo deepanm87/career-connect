@@ -7,8 +7,8 @@ import {
   internalMutation
 } from "./_generated/server"
 import { internal } from "./_generated/api"
-import { Doc, Id } from "./_generated/dataModel"
-import { QueryCtx } from "./_generated/server"
+import type { Doc, Id } from "./_generated/dataModel"
+import type { QueryCtx } from "./_generated/server"
 import { 
   getUserByIdentity,
   getProfileForUser,
@@ -22,7 +22,6 @@ import {
 import { orgHasCompanyProBilling } from "./clerkBilling"
 import { cosineSimilarity } from "./embeddings"
 import type { MutationCtx } from "./_generated/server"
-import { Qahiri } from "next/font/google"
 
 const jobIsOpen = (j: Doc<"jobs">) => j.status !== "closed"
 
@@ -62,7 +61,7 @@ const seniorityValidator = v.union(
 const workModeValidator = v.union(
   v.literal("remote"),
   v.literal("hybrid"),
-  v.literal("principal")
+  v.literal("onsite")
 )
 
 const jobWithCompanyValidator = v.object({
@@ -122,7 +121,7 @@ export const getJobs = query({
   args: {
     search: v.optional(v.string()),
     seniority: v.optional(seniorityValidator),
-    workMode: v.optional(workmodeValidator)
+    workMode: v.optional(workModeValidator)
   },
   returns: v.array(jobWithCompanyValidator),
   handler: async (ctx, args) => {
@@ -145,7 +144,7 @@ export const getJobs = query({
       const workMode = args.workMode
       jobs = await ctx.db
         .query("jobs")
-        .withIndex("by_workmode", q => q.eq("workMode", workMode))
+        .withIndex("by_workMode", q => q.eq("workMode", workMode))
         .collect()
     } else {
       jobs = await ctx.db.query("jobs").order("desc").collect()
@@ -176,7 +175,7 @@ export const getJobs = query({
           return haystack.includes(term)
         })
         : enriched
-    filtered.sort((a, b) => b.job.PostedAt - a.job.postedAt)
+    filtered.sort((a, b) => b.job.postedAt - a.job.postedAt)
 
     const results = await Promise.all(
       filtered.map(async ({ job, company }) => {
@@ -411,12 +410,12 @@ export const getCompanyJobs = query({
           .query("applications")
           .withIndex("by_job", q => q.eq("jobId", job._id))
           .collect()
-        const { embeddings: _e, ...jobRest } = job
+        const { embedding: _e, ...jobRest } = job
         return {
           ...jobRest,
           applicantCount: applications.filter(a => a.status !== "withdrawn")
             .length
-        } 
+        }
       })
     )
   }

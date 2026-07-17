@@ -6,8 +6,8 @@ import {
   authorSummaryValidator,
   postDocValidator
 } from "./model"
-import { Doc, Id } from "./_generated/dataModel"
-import { QueryCtx } from "./_generated/server"
+import type { Doc, Id } from "./_generated/dataModel"
+import type { QueryCtx } from "./_generated/server"
 
 const feedItemValidator = v.object({
   ...postDocValidator.fields,
@@ -37,7 +37,7 @@ export const getFeed = query({
   args: { limit: v.optional(v.number()) },
   returns: v.array(feedItemValidator),
   handler: async (ctx, args) => {
-    const me = getUserByIdentity(ctx)
+    const me = await getUserByIdentity(ctx)
     const posts = await ctx.db
       .query("posts")
       .withIndex("by_creation_time")

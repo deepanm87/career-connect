@@ -6,6 +6,7 @@ import {
   internalMutation
 } from "./_generated/server"
 import { internal } from "./_generated/api"
+import type { Doc, Id } from "./_generated/dataModel"
 import {
   getUserByIdentity,
   getProfileForUser,
@@ -56,7 +57,7 @@ export const apply = mutation({
       .unique()
 
     const now = Date.now()
-    let applicationId
+    let applicationId: Id<"applications">
     if (existing !== null) {
       if (existing.status !== "withdrawn") {
         throw new Error("You already applied to this job")
@@ -70,7 +71,7 @@ export const apply = mutation({
           ]),
           { status: "submitted" as const, at: now }
         ],
-        updated: now
+        updatedAt: now
       })
       applicationId = existing._id
     } else {
@@ -238,24 +239,26 @@ export const getApplicantsForCompany = query({
   handler: async (ctx, args) => {
     await assertCompanyAdmin(ctx, args.companyId)
 
-    let applications
-    if (args.jobId !== undefined) {
-      const jobId = args.jobId
-      applications = await ctx.db
-        .query("applications")
-        .withIndex("by_job", q => q.eq("jobId", jobId))
-        .collect()
-    } else {
+    let applications: Doc<"applications">[]
+    const requestedJobId = args.jobId
+    if (requestedJobId === undefined) {
       applications = await ctx.db
         .query("applications")
         .withIndex("by_company", q => q.eq("companyId", args.companyId))
         .collect()
+    } else {
+      const jobId: Id<"jobs"> = requestedJobId
+      applications = await ctx.db
+        .query("applications")
+        .withIndex("by_job", q => q.eq("jobId", jobId))
+        .collect()
     }
-    applications = applications.filter(a => a.status !== "withdrawn")
-    applications.sort((a, b) => b.createdAt - a.createdAt)
+
+    const filteredApplications = applications.filter(a => a.status !== "withdrawn")
+    filteredApplications.sort((a, b) => b.createdAt - a.createdAt)
 
     return await Promise.all(
-      applications.map(async app => {
+      filteredApplications.map(async app => {
         const user = await ctx.db.get(app.userId)
         const profile = 
           user === null

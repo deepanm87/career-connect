@@ -11,7 +11,7 @@ import {
   isCompanyAdmin,
   getMyCompanyDoc,
   assertCompanyAdmin,
-  baseSlugForm,
+  baseSlugFrom,
   uniqueCompanySlug
 } from "./model"
 import { computeMatchScore } from "./jobs"
@@ -99,7 +99,7 @@ export const getCompanyBySlug = query({
       .withIndex("by_company", q => q.eq("companyId", company._id))
       .collect()
 
-    const experience = await ctx.db.query("experiences").collect()
+    const experiences = await ctx.db.query("experiences").collect()
     const seen = new Set<string>()
     const employees:  Array<{
       user: {
@@ -201,11 +201,11 @@ export const createCompany = mutation({
       industry: args.industry.trim(),
       size: args.size,
       location: args.location.trim(),
-      about: args.location.trim(),
+      about: args.about.trim(),
       websiteUrl:
         args.websiteUrl && args.websiteUrl.trim().length > 0
           ? args.websiteUrl.trim()
-          : undefined
+          : undefined,
       orgId: args.orgId,
       ownerId: me._id
     })
@@ -247,10 +247,10 @@ export const deleteCompany = mutation({
     const { company } = await assertCompanyAdmin(ctx, args.companyId)
 
     const jobs = await ctx.db
-      .query("join")
+      .query("jobs")
       .withIndex("by_companyId", q => q.eq("companyId", company._id))
       .collect()
-    const jobIds = new Set(jobs.map(j => j._id as string))
+    const jobIds = new Set(jobs.map(j => j._id))
     const saves = await ctx.db.query("savedJobs").collect()
     for (const save of saves) {
       if (jobIds.has(save.jobId)) {

@@ -27,7 +27,7 @@ export default defineSchema({
     openToWork: v.boolean(),
     coverImageUrl: v.optional(v.string()),
     coverImageStorageId: v.optional(v.id("_storage")),
-    embedding: v.optional(v.string()),
+    embedding: v.optional(v.array(v.float64())),
     embeddingText: v.optional(v.string())
   }).index("by_userId", ["userId"]),
 
@@ -60,7 +60,7 @@ export default defineSchema({
 
   skillEndorsements: defineTable({
     skillId: v.id("skills"),
-    endorseId: v.id("users"),
+    endorserId: v.id("users"),
   }).index("by_skill_and_endorser", ["skillId", "endorserId"]),
 
   companies: defineTable({

@@ -1,0 +1,209 @@
+"use client"
+
+import Link from "next/link"
+import { useQuery, useMutation } from "convex/react"
+import {
+  Sparkles,
+  Briefcase,
+  Newspaper,
+  MapPin,
+  ArrowRight,
+  UserPlus
+} from "lucide-react"
+import { toast } from "sonner"
+import { api } from "@/convex/_generated/api"
+import { UserAvatar } from "@/components/user-avatar"
+import { PostComposer } from "@/components/feed/post-composer"
+import { PostCard } from "@/components/feed/post-card"
+import { EmptyState } from "@/components/empty-state"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { formatSalary } from "@/lib/format"
+
+export default function FeedPage() {
+  const me = useQuery(api.users.getCurrentUser)
+  const feed = useQuery(api.feed.getFeed, { limit: 30 })
+  const jobs = useQuery(api.jobs.getJobs, {})
+  const people = useQuery(api.network.getSuggestedPeople, { limit: 4 })
+  const toggleFollow = useMutation(api.network.toggleFollow)
+
+  const suggestedJobs = jobs?.slice(0, 3) ?? []
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_260px]">
+      <aside className="hidden lg:block">
+        <div className="sticky top-18 space-y-4">
+          <div className="overflow-hidden rounded-xl border bg-card">
+            <div className="h-14 bg-linear-to-r from-primary/25 via-accent to-apricot/40" />
+            <div className="-mt-7 flex flex-col items-center px-4 pb-4 text-center">
+              {me === undefined ? (
+                <Skeleton className="size-14 rounded-full" />
+              ) : (
+                  <UserAvatar 
+                    name={me?.user.name ?? "You"}
+                    src={me?.user.imageUrl}
+                    className="size-14 border-4 border-card"
+                  />
+                )}
+                <p className="mt-2 font-heading text-lg font-semibold tracking-tight">{me?.user.name ?? " "}</p>
+                <p className="line-clamp-2 text-xs text-muted-foreground">
+                  {me?.profile?.headline ?? "Add a headline to your profile"}
+                </p>
+                {me?.user.username && (
+                  <Button
+                    render={<Link href={`/in/${me.user.username}`} />}
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full"
+                  >
+                    View profile
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <Link
+              href="/agent"
+              className="group flex items-center gap-2 rounded-2xl bg-ink p-3.5 text-sm font-medium text-paper transition-colors hover:bg-ink/90"
+            >
+              <Sparkles className="size-4 text-apricot" />
+              AI Career Agent
+              <ArrowRight className="ml-auto size-4 text-paper/60 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+      </aside>
+
+      <div className="space-y-4">
+        <PostComposer currentUser={me ? me.user : null} />
+
+        {feed === undefined ? (
+          <div className="space-y-4">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="rounded-xl border bg-card p-4">
+                <div className="flex gap-3">
+                  <Skeleton className="size-10 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+                <Skeleton className="mt-3 h-16 w-full" />
+              </div>
+            ))}
+          </div>
+        ) : feed.length === 0 ? (
+          <EmptyState 
+            icon={Newspaper}
+            title="Your feed is quiet"
+            description="Follow people or share the first update to get things going."
+          />
+        ) :  feed.length === 0 ? (
+          <EmptyState 
+            icon={Newspaper}
+            title="Your feed is quiet"
+            description="Follow people or share the first update to get things going."
+          />
+        ) : (
+          <div className="space-y-4">
+            {feed.map(post => (
+              <PostCard 
+                key={post._id}
+                post={post}
+                currentUserId={me?.user._id ?? null}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <aside className="hidden lg:block">
+        <div className="sticky top-18 space-y-4">
+          {people !== undefined && people.length > 0 && (
+            <div className="space-y-3 rounded-xl border bg-card p-4">
+              <div className="flex items-center justify-between">
+                <p className="font-heading text-lg font-semibold tracking-tight">
+                  People to follow
+                </p>
+                <UserPlus className="size-4 text-muted-foreground" />
+              </div>
+              {people.map(p => (
+                <div key={p._id} className="flex items-center gap-2.5">
+                  <Link href={`/in/${p.username}`}>
+                    <UserAvatar name={p.name} src={p.imageUrl} className="size-9" />
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/in/${p.username}`}
+                      className="block truncate text-sm font-medium hover:underline"
+                    >
+                      {p.name}
+                    </Link>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {p.headline ?? ""}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={async () => {
+                      try {
+                        await toggleFollow({ userId: p._id })
+                        toast.success(`Following ${p.name}`)
+                      } catch {
+                        toast.error("Could not follow")
+                      }
+                    }}
+                  >
+                    Follow
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+              <div className="space-y-3 rounded-xl border bg-card p-4">
+                <div className="flex items-center justify-between">
+                  <p className="font-heading text-lg font-semibold tracking-tight">
+                    Suggested jobs
+                  </p>
+                  <Briefcase className="size-4 text-muted-foreground" />
+                </div>
+                {jobs === undefined ? (
+                  <div className="space-y-3">
+                    {[0, 1, 2].map(i => (
+                      <Skeleton key={i} className="h-14 w-full" />
+                    ))}
+                  </div>
+                ) : (
+                  suggestedJobs.map(job => (
+                    <Link
+                      key={job._id}
+                      href={`/jobs?job=${job._id}`}
+                      className="block rounded-xl border p-2.5 text-sm transition-colors hover:border-primary/40 hover:bg-accent/40"
+                    >
+                      <p className="truncate font-medium">{job.title}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {job.company?.name}
+                      </p>
+                      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="size-3" />
+                        {job.location} ·{" "}
+                        {formatSalary(job.salaryMin, job.salaryMax, job.currency)}
+                      </p>
+                    </Link>
+                  ))
+                )}
+                <Button
+                  render={<Link href="/jobs" />}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
+                >
+                  See all jobs
+                </Button>
+              </div>
+            </div>
+      </aside>
+    </div>
+  )
+}

@@ -79,8 +79,8 @@ export const getProfileByUsername = query({
           if (me !== null) {
             const endorsement = await ctx.db
               .query("skillEndorsements")
-              .withIndex("by_skill_and_endorser", q => 
-                q.eq("skillId" s._id).eq("endorserId", me._id)
+              .withIndex("by_skill_and_endorser", q =>
+                q.eq("skillId", s._id).eq("endorserId", me._id)
               )
               .unique()
             endorsedByMe = endorsement !== null
@@ -390,7 +390,7 @@ export const removeSkill = mutation({
     }
     const endorsements = await ctx.db
       .query("skillEndorsements")
-      .withIndex("by_skill_and_endorser", q => q.eq("skilled", skill._id))
+      .withIndex("by_skill_and_endorser", q => q.eq("skillId", skill._id))
       .collect()
     for (const e of endorsements) {
       await ctx.db.delete(e._id)

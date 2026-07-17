@@ -24,22 +24,6 @@ export const getMyProfileDrafts = query({
   }
 })
 
-export const getMyProfileDrafts = query({
-  args: {},
-  returns: v.array(profileDraftDocValidator),
-  handler: async ctx => {
-    const me = await getUserByIdentity(ctx)
-    if (me === null) {
-      return []
-    }
-    return await ctx.db
-      .query("profileDrafts")
-      .withIndex("by_userId", q => q.eq("userId", me._id))
-      .order("desc")
-      .collect()
-  }
-})
-
 export const getMyOutreachDrafts = query({
   args: {},
   returns: v.array(outreachDraftDocValidator),

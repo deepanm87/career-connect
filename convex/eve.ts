@@ -1,9 +1,9 @@
 import { v } from "convex/values"
 import { query, mutation } from "./_generated/server"
 import { internal } from "./_generated/api"
-import { QueryCtx, MutationCtx } from "./_generated/server"
+import type { QueryCtx, MutationCtx } from "./_generated/server"
 import { getUserByClerkId, careerPhaseValidator } from "./model"
-import { Id } from "./_generated/dataModel"
+import type { Id } from "./_generated/dataModel"
 
 function assertEveSecret(secret: string): void {
   const expected = process.env.EVE_CONVEX_SECRET
@@ -37,11 +37,11 @@ const userContextValidator = v.object({
   openToWork: v.boolean(),
   experiences: v.array(
     v.object({
-      _id: v.string(),
+      _id: v.id("experiences"),
       title: v.string(),
       company: v.string(),
       startDate: v.string(),
-      endDate: v.string(),
+      endDate: v.union(v.string(), v.null()),
       description: v.string(),
       location: v.union(v.string(), v.null())
     })
@@ -113,6 +113,12 @@ export const getUserContext = query({
       .order("desc")
       .collect()
       
+    const savedRows = await ctx.db
+      .query("savedJobs")
+      .withIndex("by_user", q => q.eq("userId", userId))
+      .order("desc")
+      .collect()
+
     const savedJobs = []
     for (const row of savedRows) {
       const job = await ctx.db.get(row.jobId)
@@ -175,6 +181,8 @@ export const getAllJobsForMatching = query({
           jobId: job._id,
           title: job.title,
           companyId: job.companyId,
+          company: company?.name ?? null,
+          companyIndustry: company?.industry ?? null,
           salaryMin: job.salaryMin,
           salaryMax: job.salaryMax,
           currency: job.currency,

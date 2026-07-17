@@ -154,10 +154,10 @@ function Eyebrow({
 }
 
 export default async function LandingPage() {
-  //const { userId } = await auth()
-  //if (userId) {
-   // redirect("/feed")
-  //}
+  const { userId } = await auth()
+  if (userId) {
+    redirect("/feed")
+  }
 
   return (
     <div className="lp lp-grain relative min-h-svh overflow-x-clip bg-paper text-ink">

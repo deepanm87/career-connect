@@ -51,7 +51,7 @@ export const global = query({
       )
       .slice(0, MAX_PER_GROUP)
       .map(c => ({
-        _id: c.id,
+        _id: c._id,
         name: c.name,
         slug: c.slug,
         logoUrl: c.logoUrl,
@@ -66,7 +66,7 @@ export const global = query({
       matchedUsers.map(async u => {
         const profile = await getProfileForUser(ctx, u._id)
         return {
-          id: u._id,
+          _id: u._id,
           name: u.name,
           username: u.username,
           imageUrl: u.imageUrl,
